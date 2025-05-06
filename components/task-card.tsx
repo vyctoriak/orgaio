@@ -127,12 +127,12 @@ export function TaskCard({
       </div>
 
       {task.description && (
-        <p className="text-sm text-slate-500 dark:text-slate-400 line-clamp-2">
+        <p className="text-sm text-slate-500 dark:text-slate-400 line-clamp-2 mb-2">
           {task.description}
         </p>
       )}
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2 mb-2">
         {task.tags.map((tag) => (
           <Badge
             key={tag}
