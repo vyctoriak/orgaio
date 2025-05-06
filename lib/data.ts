@@ -1,0 +1,58 @@
+import type { Task } from "./types"
+
+export const initialTasks: Task[] = [
+  {
+    id: "task-1",
+    title: "Desenvolver protótipo da interface",
+    description: "Criar wireframes e protótipos de alta fidelidade para o novo aplicativo",
+    status: "completed",
+    priority: "high",
+    tags: ["trabalho", "design"],
+    createdAt: "2023-05-01T10:00:00Z",
+  },
+  {
+    id: "task-2",
+    title: "Reunião com stakeholders",
+    description: "Discutir requisitos e expectativas para o próximo trimestre",
+    status: "pending",
+    priority: "medium",
+    tags: ["trabalho", "reunião"],
+    createdAt: "2023-05-02T14:30:00Z",
+  },
+  {
+    id: "task-3",
+    title: "Implementar autenticação",
+    description: "Adicionar login com Google e GitHub",
+    status: "in-progress",
+    priority: "high",
+    tags: ["trabalho", "desenvolvimento"],
+    createdAt: "2023-05-03T09:15:00Z",
+  },
+  {
+    id: "task-4",
+    title: "Correr 5km",
+    description: "Treino para a maratona do próximo mês",
+    status: "pending",
+    priority: "low",
+    tags: ["pessoal", "saúde"],
+    createdAt: "2023-05-04T18:00:00Z",
+  },
+  {
+    id: "task-5",
+    title: "Estudar Next.js 15",
+    description: "Aprender sobre as novas funcionalidades do App Router",
+    status: "in-progress",
+    priority: "medium",
+    tags: ["estudo", "desenvolvimento"],
+    createdAt: "2023-05-05T20:00:00Z",
+  },
+  {
+    id: "task-6",
+    title: "Preparar apresentação",
+    description: "Slides para a reunião de equipe na sexta-feira",
+    status: "pending",
+    priority: "high",
+    tags: ["trabalho", "apresentação"],
+    createdAt: "2023-05-06T11:30:00Z",
+  },
+]
