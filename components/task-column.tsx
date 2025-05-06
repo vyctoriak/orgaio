@@ -8,6 +8,8 @@ import {
 import { TaskCard } from "@/components/task-card";
 import type { Task } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { useMemo } from "react";
+import React from "react";
 
 interface TaskColumnProps {
   id: string;
@@ -16,6 +18,8 @@ interface TaskColumnProps {
   color: string;
   onEdit: (task: Task) => void;
   onDelete: (taskId: string) => void;
+  activeId?: string | null;
+  overId?: string | null;
 }
 
 export function TaskColumn({
@@ -25,10 +29,22 @@ export function TaskColumn({
   color,
   onEdit,
   onDelete,
+  activeId,
+  overId,
 }: TaskColumnProps) {
   const { setNodeRef, isOver } = useDroppable({
     id,
   });
+
+  // Calcule o índice onde o placeholder deve aparecer
+  const placeholderIndex = useMemo(() => {
+    if (!activeId || !overId) return -1;
+    // Se o mouse está sobre a coluna (overId é o id da coluna), placeholder no final
+    if (overId === id) return tasks.length;
+    // Se está sobre algum card, placeholder na posição desse card
+    const idx = tasks.findIndex((task) => task.id === overId);
+    return idx >= 0 ? idx : -1;
+  }, [activeId, overId, id, tasks]);
 
   return (
     <div
@@ -58,14 +74,24 @@ export function TaskColumn({
         strategy={verticalListSortingStrategy}
       >
         <div className="space-y-3 min-h-[100px]">
-          {tasks.map((task) => (
-            <TaskCard
-              key={task.id}
-              task={task}
-              onEdit={onEdit}
-              onDelete={onDelete}
-            />
+          {tasks.map((task, idx) => (
+            <React.Fragment key={task.id}>
+              {placeholderIndex === idx && (
+                <div
+                  key={`placeholder-${idx}`}
+                  className="h-[88px] bg-primary/10 rounded-md border-2 border-dashed border-primary/40 transition-all duration-200"
+                />
+              )}
+              <TaskCard task={task} onEdit={onEdit} onDelete={onDelete} />
+            </React.Fragment>
           ))}
+          {/* Se for soltar no fim da coluna */}
+          {placeholderIndex === tasks.length && (
+            <div
+              key="placeholder-end"
+              className="h-[88px] bg-primary/10 rounded-md border-2 border-dashed border-primary/40 transition-all duration-200"
+            />
+          )}
           {isOver && tasks.length === 0 && (
             <div className="border-2 border-dashed border-primary/30 rounded-md h-24 flex items-center justify-center text-sm text-slate-400">
               Solte aqui

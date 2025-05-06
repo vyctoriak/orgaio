@@ -40,7 +40,9 @@ export function TaskHeader({
         <div className="flex items-center gap-2">
           <Tabs
             value={viewMode}
-            onValueChange={(value) => onViewModeChange(value as any)}
+            onValueChange={(value) =>
+              onViewModeChange(value as "list" | "kanban" | "calendar")
+            }
           >
             <TabsList className="bg-[#7C444F]/10">
               <TabsTrigger

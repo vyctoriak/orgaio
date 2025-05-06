@@ -18,7 +18,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR" suppressHydrationWarning>
-      <body className={raleway.className}>
+      <body className={raleway.className} suppressHydrationWarning>
         <ThemeProvider
           attribute="class"
           defaultTheme="light"

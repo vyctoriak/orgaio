@@ -35,9 +35,11 @@ export default function TaskBoard() {
     updateTaskStatus,
     moveTaskToStatus,
     isLoaded,
+    setTasks,
   } = useTaskStore();
 
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [overId, setOverId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"list" | "kanban" | "calendar">(
     "kanban"
   );
@@ -110,37 +112,133 @@ export default function TaskBoard() {
     setActiveId(event.active.id as string);
   }
 
-  function handleDragEnd(event: DragEndEvent) {
-    const { active, over } = event;
-    setActiveId(null);
+  function handleDragOver(event: any) {
+    setOverId(event.over?.id ?? null);
+  }
 
+  function handleDragEnd(event: DragEndEvent) {
+    setActiveId(null);
+    setOverId(null);
+
+    const { active, over } = event;
     if (!over) return;
 
-    if (active.id !== over.id) {
-      const activeIndex = tasks.findIndex((task) => task.id === active.id);
-      const overIndex = tasks.findIndex((task) => task.id === over.id);
-
-      if (activeIndex !== -1 && overIndex !== -1) {
-        // Reordenar tarefas
-        const newTasks = arrayMove(tasks, activeIndex, overIndex);
-        // Como estamos usando o hook useTasks, não precisamos mais chamar setTasks diretamente
-        // Em vez disso, atualizamos cada tarefa individualmente
-        newTasks.forEach((task, index) => {
-          if (JSON.stringify(task) !== JSON.stringify(tasks[index])) {
-            updateTask(task);
-          }
-        });
-      }
-    }
-
-    // Handle moving between columns
-    const taskId = active.id as string;
+    const activeId = active.id as string;
     const overId = over.id as string;
 
-    if (overId.includes("column")) {
-      const newStatus = overId.replace("column-", "");
-      moveTaskToStatus(taskId, newStatus as Task["status"]);
+    if (activeId === overId) return;
+
+    const activeTask = tasks.find((task) => task.id === activeId);
+    const overTask = tasks.find((task) => task.id === overId);
+
+    if (!activeTask) return;
+
+    // Reordenar para o final da coluna se overId for o id da coluna
+    if (overId === `column-${activeTask.status}`) {
+      const columnTasks = tasks.filter(
+        (task) => task.status === activeTask.status
+      );
+      const oldIndex = columnTasks.findIndex((task) => task.id === activeId);
+      const newIndex = columnTasks.length - 1;
+
+      if (oldIndex !== -1 && oldIndex !== newIndex) {
+        const newColumnTasks = [...columnTasks];
+        const [removed] = newColumnTasks.splice(oldIndex, 1);
+        newColumnTasks.push(removed);
+
+        // Atualizar o array global de tasks, preservando a ordem das outras colunas
+        const newTasks: Task[] = [];
+        let colIdx = 0;
+        for (let i = 0; i < tasks.length; i++) {
+          if (tasks[i].status === activeTask.status) {
+            newTasks.push(newColumnTasks[colIdx++]);
+          } else {
+            newTasks.push(tasks[i]);
+          }
+        }
+
+        setTasks(newTasks);
+      }
+      return;
     }
+
+    // Reordenação dentro da mesma coluna
+    if (overTask && activeTask.status === overTask.status) {
+      const columnTasks = tasks.filter(
+        (task) => task.status === activeTask.status
+      );
+      const oldIndex = columnTasks.findIndex((task) => task.id === activeId);
+      const newIndex = columnTasks.findIndex((task) => task.id === overId);
+
+      const newColumnTasks = [...columnTasks];
+      const [removed] = newColumnTasks.splice(oldIndex, 1);
+      newColumnTasks.splice(newIndex, 0, removed);
+
+      // Atualizar o array global de tasks, preservando a ordem das outras colunas
+      const newTasks: Task[] = [];
+      let colIdx = 0;
+      for (let i = 0; i < tasks.length; i++) {
+        if (tasks[i].status === activeTask.status) {
+          newTasks.push(newColumnTasks[colIdx++]);
+        } else {
+          newTasks.push(tasks[i]);
+        }
+      }
+
+      setTasks(newTasks);
+      return;
+    }
+
+    // Se soltou em uma coluna vazia
+    if (overId.startsWith("column-")) {
+      const newStatus = overId.replace("column-", "") as Task["status"];
+      updateTask({ ...activeTask, status: newStatus });
+      return;
+    }
+
+    if (!overTask) return;
+
+    const fromStatus = activeTask.status;
+    const toStatus = overTask.status;
+
+    // Arrays das colunas
+    const fromColumnTasks = tasks.filter((task) => task.status === fromStatus);
+    const toColumnTasks = tasks.filter((task) => task.status === toStatus);
+
+    // Índices dentro das colunas
+    const fromIndex = fromColumnTasks.findIndex((task) => task.id === activeId);
+    const overIndex = toColumnTasks.findIndex((task) => task.id === overId);
+
+    let newFromColumnTasks = [...fromColumnTasks];
+    let newToColumnTasks = [...toColumnTasks];
+
+    // Remover do array de origem
+    newFromColumnTasks.splice(fromIndex, 1);
+
+    // Atualizar status se mudou de coluna
+    const updatedTask = { ...activeTask, status: toStatus };
+
+    // Inserir na posição correta do array de destino
+    newToColumnTasks.splice(overIndex, 0, updatedTask);
+
+    // Montar novo array global de tasks, preservando a ordem das outras colunas
+    let newTasks: Task[] = [];
+    if (fromStatus === toStatus) {
+      // Só reordenou dentro da mesma coluna
+      newTasks = tasks.map((task) =>
+        task.status === fromStatus ? newToColumnTasks.shift()! : task
+      );
+    } else {
+      // Moveu entre colunas
+      newTasks = tasks
+        .filter(
+          (task) => task.status !== fromStatus && task.status !== toStatus
+        )
+        .concat(newFromColumnTasks, newToColumnTasks);
+    }
+
+    // Atualizar todas as tasks no Zustand
+    newTasks.forEach(updateTask);
   }
 
   function handleEditTask(task: Task) {
@@ -172,16 +270,15 @@ export default function TaskBoard() {
           sensors={sensors}
           collisionDetection={pointerWithin}
           onDragStart={handleDragStart}
+          onDragOver={handleDragOver}
           onDragEnd={handleDragEnd}
           autoScroll={{
             threshold: {
               x: 0.1,
               y: 0.25,
             },
-            speed: {
-              x: 10,
-              y: 10,
-            },
+            acceleration: 10,
+            interval: 5,
           }}
         >
           <SortableContext
@@ -196,6 +293,8 @@ export default function TaskBoard() {
                 color="#7C444F"
                 onEdit={handleEditTask}
                 onDelete={deleteTask}
+                activeId={activeId}
+                overId={overId}
               />
               <TaskColumn
                 id="column-in-progress"
@@ -204,6 +303,8 @@ export default function TaskBoard() {
                 color="#E16A54"
                 onEdit={handleEditTask}
                 onDelete={deleteTask}
+                activeId={activeId}
+                overId={overId}
               />
               <TaskColumn
                 id="column-completed"
@@ -212,6 +313,8 @@ export default function TaskBoard() {
                 color="#F39E60"
                 onEdit={handleEditTask}
                 onDelete={deleteTask}
+                activeId={activeId}
+                overId={overId}
               />
             </div>
           </SortableContext>

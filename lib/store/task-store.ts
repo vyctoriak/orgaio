@@ -12,6 +12,7 @@ interface TaskState {
   updateTaskStatus: (taskId: string, completed: boolean) => void;
   reorderTasks: (startIndex: number, endIndex: number) => void;
   moveTaskToStatus: (taskId: string, newStatus: Task["status"]) => void;
+  setTasks: (newTasks: Task[]) => void;
 }
 
 export const useTaskStore = create<TaskState>()(
@@ -69,6 +70,8 @@ export const useTaskStore = create<TaskState>()(
           ),
         }));
       },
+
+      setTasks: (newTasks) => set({ tasks: newTasks }),
     }),
     {
       name: "orgaio-tasks", // nome da chave no localStorage
