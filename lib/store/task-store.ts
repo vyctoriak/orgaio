@@ -1,7 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { Task } from "@/lib/types";
-import { initialTasks } from "@/lib/data";
 
 interface TaskState {
   tasks: Task[];
@@ -18,7 +17,7 @@ interface TaskState {
 export const useTaskStore = create<TaskState>()(
   persist(
     (set) => ({
-      tasks: initialTasks,
+      tasks: [],
       isLoaded: false,
 
       addTask: (newTask) => {
