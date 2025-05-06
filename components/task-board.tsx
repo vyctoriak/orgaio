@@ -11,10 +11,10 @@ import {
   useSensors,
   DragOverlay,
   type DragStartEvent,
+  type DragOverEvent,
 } from "@dnd-kit/core";
 import {
   SortableContext,
-  arrayMove,
   horizontalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { TaskColumn } from "@/components/task-column";
@@ -33,7 +33,6 @@ export default function TaskBoard() {
     updateTask,
     deleteTask,
     updateTaskStatus,
-    moveTaskToStatus,
     isLoaded,
     setTasks,
   } = useTaskStore();
@@ -112,8 +111,8 @@ export default function TaskBoard() {
     setActiveId(event.active.id as string);
   }
 
-  function handleDragOver(event: any) {
-    setOverId(event.over?.id ?? null);
+  function handleDragOver(event: DragOverEvent) {
+    setOverId(event.over?.id?.toString() ?? null);
   }
 
   function handleDragEnd(event: DragEndEvent) {
@@ -209,8 +208,8 @@ export default function TaskBoard() {
     const fromIndex = fromColumnTasks.findIndex((task) => task.id === activeId);
     const overIndex = toColumnTasks.findIndex((task) => task.id === overId);
 
-    let newFromColumnTasks = [...fromColumnTasks];
-    let newToColumnTasks = [...toColumnTasks];
+    const newFromColumnTasks = [...fromColumnTasks];
+    const newToColumnTasks = [...toColumnTasks];
 
     // Remover do array de origem
     newFromColumnTasks.splice(fromIndex, 1);
