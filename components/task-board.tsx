@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
+import { useState, useEffect } from "react";
 import {
   DndContext,
   type DragEndEvent,
@@ -11,45 +11,62 @@ import {
   useSensors,
   DragOverlay,
   type DragStartEvent,
-} from "@dnd-kit/core"
-import { SortableContext, arrayMove, horizontalListSortingStrategy } from "@dnd-kit/sortable"
-import { TaskColumn } from "@/components/task-column"
-import { TaskHeader } from "@/components/task-header"
-import { TaskCard } from "@/components/task-card"
-import { TaskList } from "@/components/task-list"
-import { TaskCalendar } from "@/components/task-calendar"
-import { TaskEditDialog } from "@/components/task-edit-dialog"
-import { useTasks } from "@/lib/hooks/use-tasks"
-import type { Task } from "@/lib/types"
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  horizontalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { TaskColumn } from "@/components/task-column";
+import { TaskHeader } from "@/components/task-header";
+import { TaskCard } from "@/components/task-card";
+import { TaskList } from "@/components/task-list";
+import { TaskCalendar } from "@/components/task-calendar";
+import { TaskEditDialog } from "@/components/task-edit-dialog";
+import { useTaskStore } from "@/lib/store/task-store";
+import type { Task } from "@/lib/types";
 
 export default function TaskBoard() {
-  const { tasks, addTask, updateTask, deleteTask, updateTaskStatus, moveTaskToStatus, isLoaded } = useTasks()
+  const {
+    tasks,
+    addTask,
+    updateTask,
+    deleteTask,
+    updateTaskStatus,
+    moveTaskToStatus,
+    isLoaded,
+  } = useTaskStore();
 
-  const [activeId, setActiveId] = useState<string | null>(null)
-  const [viewMode, setViewMode] = useState<"list" | "kanban" | "calendar">("kanban")
-  const [searchQuery, setSearchQuery] = useState("")
-  const [editingTask, setEditingTask] = useState<Task | null>(null)
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<"list" | "kanban" | "calendar">(
+    "kanban"
+  );
+  const [searchQuery, setSearchQuery] = useState("");
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   // Adicionar event listeners para edição e exclusão de tarefas
   useEffect(() => {
     const handleEditTask = (event: CustomEvent<Task>) => {
-      setEditingTask(event.detail)
-      setIsEditDialogOpen(true)
-    }
+      setEditingTask(event.detail);
+      setIsEditDialogOpen(true);
+    };
 
     const handleDeleteTask = (event: CustomEvent<string>) => {
-      deleteTask(event.detail)
-    }
+      deleteTask(event.detail);
+    };
 
-    window.addEventListener("edit-task", handleEditTask as EventListener)
-    window.addEventListener("delete-task", handleDeleteTask as EventListener)
+    window.addEventListener("edit-task", handleEditTask as EventListener);
+    window.addEventListener("delete-task", handleDeleteTask as EventListener);
 
     return () => {
-      window.removeEventListener("edit-task", handleEditTask as EventListener)
-      window.removeEventListener("delete-task", handleDeleteTask as EventListener)
-    }
-  }, [deleteTask])
+      window.removeEventListener("edit-task", handleEditTask as EventListener);
+      window.removeEventListener(
+        "delete-task",
+        handleDeleteTask as EventListener
+      );
+    };
+  }, [deleteTask]);
 
   // Filtrar tarefas com base na busca
   const filteredTasks = tasks.filter(
@@ -57,19 +74,27 @@ export default function TaskBoard() {
       searchQuery === "" ||
       task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       task.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      task.tags.some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase())),
-  )
+      task.tags.some((tag) =>
+        tag.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+  );
 
-  const pendingTasks = filteredTasks.filter((task) => task.status === "pending")
-  const inProgressTasks = filteredTasks.filter((task) => task.status === "in-progress")
-  const completedTasks = filteredTasks.filter((task) => task.status === "completed")
+  const pendingTasks = filteredTasks.filter(
+    (task) => task.status === "pending"
+  );
+  const inProgressTasks = filteredTasks.filter(
+    (task) => task.status === "in-progress"
+  );
+  const completedTasks = filteredTasks.filter(
+    (task) => task.status === "completed"
+  );
 
   const mouseSensor = useSensor(MouseSensor, {
     // Aumentar a distância de ativação para evitar cliques acidentais
     activationConstraint: {
       distance: 5, // 5px
     },
-  })
+  });
 
   const touchSensor = useSensor(TouchSensor, {
     // Aumentar o delay para evitar ativações acidentais em dispositivos touch
@@ -77,50 +102,50 @@ export default function TaskBoard() {
       delay: 100,
       tolerance: 5,
     },
-  })
+  });
 
-  const sensors = useSensors(mouseSensor, touchSensor)
+  const sensors = useSensors(mouseSensor, touchSensor);
 
   function handleDragStart(event: DragStartEvent) {
-    setActiveId(event.active.id as string)
+    setActiveId(event.active.id as string);
   }
 
   function handleDragEnd(event: DragEndEvent) {
-    const { active, over } = event
-    setActiveId(null)
+    const { active, over } = event;
+    setActiveId(null);
 
-    if (!over) return
+    if (!over) return;
 
     if (active.id !== over.id) {
-      const activeIndex = tasks.findIndex((task) => task.id === active.id)
-      const overIndex = tasks.findIndex((task) => task.id === over.id)
+      const activeIndex = tasks.findIndex((task) => task.id === active.id);
+      const overIndex = tasks.findIndex((task) => task.id === over.id);
 
       if (activeIndex !== -1 && overIndex !== -1) {
         // Reordenar tarefas
-        const newTasks = arrayMove(tasks, activeIndex, overIndex)
+        const newTasks = arrayMove(tasks, activeIndex, overIndex);
         // Como estamos usando o hook useTasks, não precisamos mais chamar setTasks diretamente
         // Em vez disso, atualizamos cada tarefa individualmente
         newTasks.forEach((task, index) => {
           if (JSON.stringify(task) !== JSON.stringify(tasks[index])) {
-            updateTask(task)
+            updateTask(task);
           }
-        })
+        });
       }
     }
 
     // Handle moving between columns
-    const taskId = active.id as string
-    const overId = over.id as string
+    const taskId = active.id as string;
+    const overId = over.id as string;
 
     if (overId.includes("column")) {
-      const newStatus = overId.replace("column-", "")
-      moveTaskToStatus(taskId, newStatus as Task["status"])
+      const newStatus = overId.replace("column-", "");
+      moveTaskToStatus(taskId, newStatus as Task["status"]);
     }
   }
 
   function handleEditTask(task: Task) {
-    setEditingTask(task)
-    setIsEditDialogOpen(true)
+    setEditingTask(task);
+    setIsEditDialogOpen(true);
   }
 
   // Se ainda não carregou, podemos mostrar um indicador de carregamento
@@ -129,7 +154,7 @@ export default function TaskBoard() {
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#E16A54]"></div>
       </div>
-    )
+    );
   }
 
   return (
@@ -159,7 +184,10 @@ export default function TaskBoard() {
             },
           }}
         >
-          <SortableContext items={tasks.map((t) => t.id)} strategy={horizontalListSortingStrategy}>
+          <SortableContext
+            items={tasks.map((t) => t.id)}
+            strategy={horizontalListSortingStrategy}
+          >
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
               <TaskColumn
                 id="column-pending"
@@ -191,7 +219,10 @@ export default function TaskBoard() {
           <DragOverlay adjustScale={false} zIndex={999}>
             {activeId ? (
               <div className="transform rotate-1 shadow-lg">
-                <TaskCard task={tasks.find((task) => task.id === activeId)!} overlay />
+                <TaskCard
+                  task={tasks.find((task) => task.id === activeId)!}
+                  overlay
+                />
               </div>
             ) : null}
           </DragOverlay>
@@ -222,5 +253,5 @@ export default function TaskBoard() {
         onSave={updateTask}
       />
     </div>
-  )
+  );
 }
