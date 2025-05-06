@@ -10,7 +10,7 @@ const nextConfig = {
     unoptimized: true,
   },
   output: "export",
-  basePath: process.env.NODE_ENV === "production" ? "/orgaio-2" : "",
+  basePath: process.env.NODE_ENV === "production" ? "/orgaio" : "",
 };
 
 export default nextConfig;
